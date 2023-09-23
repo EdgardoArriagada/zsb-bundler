@@ -90,6 +90,7 @@ mod tests {
 
     fn get_expected(file_name: &str) -> String {
         let mut result = std::fs::read_to_string(get_path(file_name, "_expected.zsh")).unwrap();
+        // Remove the last newline
         result.truncate(result.len() - 1);
 
         result
