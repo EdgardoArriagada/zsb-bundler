@@ -96,12 +96,16 @@ mod tests {
         result
     }
 
+    fn get_bundled(file_name: &str) -> String {
+        bundle_lines(get_lines(file_name))
+    }
+
     #[test]
     fn test_bundle_lines() {
-        let result = bundle_lines(get_lines("basic_function"));
+        let bundled = get_bundled("basic_function");
 
         let expected = get_expected("basic_function");
 
-        assert_eq!(result, expected);
+        assert_eq!(bundled, expected);
     }
 }
