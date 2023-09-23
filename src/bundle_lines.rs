@@ -1,3 +1,4 @@
+#[derive(Debug)]
 enum Context {
     Normal,
     EmptyLine,
@@ -9,6 +10,7 @@ pub fn bundle_lines(lines: String) -> String {
     let mut context = Context::Normal;
 
     let mut result = String::new();
+    let mut pre_prev_char = ' ';
     let mut prev_char = ' ';
 
     for line in lines.lines() {
@@ -37,6 +39,11 @@ pub fn bundle_lines(lines: String) -> String {
                 Context::Normal => match c {
                     '#' => {
                         context = Context::InComment;
+                        if prev_char == ' ' && pre_prev_char != ' ' {
+                            result.pop();
+                            result.push(';');
+                            result.push(' ');
+                        }
                         break;
                     }
                     ' ' => {
@@ -66,6 +73,7 @@ pub fn bundle_lines(lines: String) -> String {
                 _ => {}
             }
 
+            pre_prev_char = prev_char;
             prev_char = c;
         }
     }
@@ -128,6 +136,15 @@ mod tests {
         let bundled = get_bundled("print_string");
 
         let expected = get_expected("print_string");
+
+        assert_eq!(bundled, expected);
+    }
+
+    #[test]
+    fn fn_with_comments() {
+        let bundled = get_bundled("fn_with_comments");
+
+        let expected = get_expected("fn_with_comments");
 
         assert_eq!(bundled, expected);
     }
