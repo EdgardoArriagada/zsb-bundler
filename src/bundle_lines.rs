@@ -85,8 +85,8 @@ mod tests {
         std::env::current_dir().unwrap().display().to_string()
     }
 
-    pub fn get_dir_cache() -> String {
-        DIR_CACHE.get_or_init(|| get_dir()).into()
+    pub fn get_dir_cache() -> &'static str {
+        DIR_CACHE.get_or_init(|| get_dir())
     }
 
     fn get_path(file_name: &str, extension: &str) -> String {
