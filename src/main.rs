@@ -38,6 +38,7 @@ fn main() {
                 Context::Normal => match c {
                     '#' => {
                         context = Context::InComment;
+                        break;
                     }
                     ' ' => {
                         if reached_char && prev_char != ' ' {
