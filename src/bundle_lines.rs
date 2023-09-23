@@ -20,8 +20,8 @@ pub fn bundle_lines(lines: String) -> String {
                 '{' => result.push(' '),
                 _ => {
                     result.push(';');
-                result.push(' ');
-                },
+                    result.push(' ');
+                }
             },
         }
 
