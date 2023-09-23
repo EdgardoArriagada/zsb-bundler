@@ -1,1 +1,1 @@
-foo() { local bar=$1;echo $bar;}
+foo() { local bar=$1; echo $bar; }

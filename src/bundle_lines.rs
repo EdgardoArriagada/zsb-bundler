@@ -18,7 +18,10 @@ pub fn bundle_lines(lines: String) -> String {
             _ => match prev_char {
                 ' ' | ';' => {}
                 '{' => result.push(' '),
-                _ => result.push(';'),
+                _ => {
+                    result.push(';');
+                result.push(' ');
+                },
             },
         }
 
@@ -74,11 +77,22 @@ pub fn bundle_lines(lines: String) -> String {
 mod tests {
     use super::*;
 
+    use std::sync::OnceLock;
+
+    static DIR_CACHE: OnceLock<String> = OnceLock::new();
+
+    fn get_dir() -> String {
+        std::env::current_dir().unwrap().display().to_string()
+    }
+
+    pub fn get_dir_cache() -> String {
+        DIR_CACHE.get_or_init(|| get_dir()).into()
+    }
+
     fn get_path(file_name: &str, extension: &str) -> String {
-        let dir = std::env::current_dir().unwrap();
         format!(
             "{}/src/test_utils/{}{}",
-            dir.display(),
+            get_dir_cache(),
             file_name,
             extension
         )
@@ -101,10 +115,19 @@ mod tests {
     }
 
     #[test]
-    fn test_bundle_lines() {
+    fn test_basic_function() {
         let bundled = get_bundled("basic_function");
 
         let expected = get_expected("basic_function");
+
+        assert_eq!(bundled, expected);
+    }
+
+    #[test]
+    fn test_print_string() {
+        let bundled = get_bundled("print_string");
+
+        let expected = get_expected("print_string");
 
         assert_eq!(bundled, expected);
     }
