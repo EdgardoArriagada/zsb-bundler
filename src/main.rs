@@ -21,6 +21,7 @@ fn main() {
             Context::InString => {}
             _ => match prev_char {
                 ' ' | ';' => {}
+                '{' => result.push(' '),
                 _ => result.push(';'),
             },
         }
@@ -30,6 +31,8 @@ fn main() {
             continue;
         }
 
+        let mut reached_char = false;
+
         for c in line.chars() {
             match context {
                 Context::Normal => match c {
@@ -37,15 +40,17 @@ fn main() {
                         context = Context::InComment;
                     }
                     ' ' => {
-                        if prev_char != ' ' {
-                            result.push(' ');
+                        if reached_char && prev_char != ' ' {
+                            result.push(c);
                         }
                     }
                     '\'' | '"' => {
+                        reached_char = true;
                         context = Context::InString;
                         result.push(c);
                     }
                     _ => {
+                        reached_char = true;
                         result.push(c);
                     }
                 },
@@ -53,8 +58,8 @@ fn main() {
                     '\'' | '"' => {
                         if prev_char != '\\' {
                             context = Context::Normal;
-                            result.push(c);
                         }
+                        result.push(c);
                     }
                     _ => result.push(c),
                 },
