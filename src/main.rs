@@ -5,11 +5,7 @@ enum Context {
     InString,
 }
 
-fn main() {
-    let home = std::env::var("HOME").unwrap();
-    let lines =
-        std::fs::read_to_string(format!("{}/.zsh-spell-book/development.zsh", home)).unwrap();
-
+fn bundle_lines(lines: String) -> String {
     let mut context = Context::Normal;
 
     let mut result = String::new();
@@ -70,6 +66,18 @@ fn main() {
             prev_char = c;
         }
     }
+
+    result
+}
+
+fn main() {
+    let home = std::env::var("HOME").unwrap();
+
+    let path = format!("{}/.zsh-spell-book/development.zsh", home);
+
+    let lines = std::fs::read_to_string(path).unwrap();
+
+    let result = bundle_lines(lines);
 
     println!("-------------------");
 
