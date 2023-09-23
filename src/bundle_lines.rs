@@ -69,3 +69,41 @@ pub fn bundle_lines(lines: String) -> String {
 
     result
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn get_lines(path: &str) -> String {
+        let dir = std::env::current_dir().unwrap();
+        let result_path = format!("{}/src/test_utils/{}.zsh", dir.display(), path);
+
+        std::fs::read_to_string(result_path).unwrap()
+    }
+
+    fn get_expected(path: &str) -> String {
+        let dir = std::env::current_dir().unwrap();
+        let result_path = format!(
+            "{}/src/test_utils/{}{}",
+            dir.display(),
+            path,
+            "_expected.zsh"
+        );
+
+        println!("le result_path {}", result_path);
+
+        let mut result = std::fs::read_to_string(result_path).unwrap();
+        result.truncate(result.len() - 1);
+
+        result
+    }
+
+    #[test]
+    fn test_bundle_lines() {
+        let result = bundle_lines(get_lines("basic_function"));
+
+        let expected = get_expected("basic_function");
+
+        assert_eq!(result, expected);
+    }
+}
