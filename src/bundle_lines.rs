@@ -15,7 +15,7 @@ pub fn bundle_lines(lines: String) -> String {
     for line in lines.lines() {
         match context {
             Context::InComment | Context::EmptyLine => context = Context::Normal,
-            Context::InString => {}
+            Context::InString => result.push('\n'),
             _ => match prev_char {
                 ' ' | ';' => {}
                 '{' => result.push(' '),
@@ -97,7 +97,7 @@ mod tests {
     }
 
     pub fn get_dir_cache() -> &'static str {
-        DIR_CACHE.get_or_init(|| get_dir())
+        DIR_CACHE.get_or_init(get_dir)
     }
 
     fn get_path(file_name: &str, extension: &str) -> String {
@@ -148,6 +148,15 @@ mod tests {
         let bundled = get_bundled("fn_with_comments");
 
         let expected = get_expected("fn_with_comments");
+
+        assert_eq!(bundled, expected);
+    }
+
+    #[test]
+    fn test_multi_line_string() {
+        let bundled = get_bundled("multi_line_string");
+
+        let expected = get_expected("multi_line_string");
 
         assert_eq!(bundled, expected);
     }
