@@ -1,1 +1,1 @@
-() { echo "bar"; }
+echo "foo"; () { echo "bar"; }

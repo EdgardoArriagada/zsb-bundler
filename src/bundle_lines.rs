@@ -10,7 +10,6 @@ pub fn bundle_lines(lines: String) -> String {
     let mut context = Context::Normal;
 
     let mut result = String::new();
-    let mut pre_prev_char = ' ';
     let mut prev_char = ' ';
 
     for line in lines.lines() {
@@ -39,11 +38,16 @@ pub fn bundle_lines(lines: String) -> String {
                 Context::Normal => match c {
                     '#' => {
                         context = Context::InComment;
-                        if prev_char == ' ' && pre_prev_char != ' ' {
-                            result.pop();
-                            result.push(';');
-                            result.push(' ');
+                        if !reached_char {
+                            break;
                         }
+
+                        if prev_char == ' ' {
+                            result.pop();
+                        }
+
+                        result.push(';');
+                        result.push(' ');
                         break;
                     }
                     ' ' => {
@@ -73,7 +77,6 @@ pub fn bundle_lines(lines: String) -> String {
                 _ => {}
             }
 
-            pre_prev_char = prev_char;
             prev_char = c;
         }
     }
