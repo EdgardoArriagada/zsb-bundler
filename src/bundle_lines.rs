@@ -6,7 +6,6 @@ enum Context {
     DoubleQuoteString,
     SingleQuoteString,
     ParamExpansion,
-    Array,
 }
 
 pub fn bundle_lines(lines: String) -> String {
@@ -25,12 +24,13 @@ pub fn bundle_lines(lines: String) -> String {
         match context {
             Context::Comment | Context::EmptyLine => context = Context::Normal,
             Context::DoubleQuoteString | Context::SingleQuoteString => result.push('\n'),
-            Context::Array => result.push(' '),
             _ => match prev_char {
                 ' ' | ';' => {}
                 '{' => result.push(' '),
                 _ => {
-                    result.push(';');
+                    if array_count == 0 {
+                        result.push(';');
+                    }
                     result.push(' ');
                 }
             },
@@ -87,7 +87,13 @@ pub fn bundle_lines(lines: String) -> String {
                         reached_char = true;
                         if prev_char == '=' {
                             array_count += 1;
-                            context = Context::Array;
+                        }
+                        result.push(c);
+                    }
+                    ')' => {
+                        reached_char = true;
+                        if array_count > 0 {
+                            array_count -= 1;
                         }
                         result.push(c);
                     }
@@ -124,27 +130,6 @@ pub fn bundle_lines(lines: String) -> String {
                         result.push(c);
                         if param_expansion_count == 0 {
                             context = Context::Normal;
-                        }
-                    }
-                    _ => result.push(c),
-                },
-                Context::Array => match c {
-                    '(' => {
-                        reached_char = true;
-                        array_count += 1;
-                        result.push(c);
-                    }
-                    ')' => {
-                        reached_char = true;
-                        array_count -= 1;
-                        result.push(c);
-                        if array_count == 0 {
-                            context = Context::Normal;
-                        }
-                    }
-                    ' ' => {
-                        if reached_char && prev_char != ' ' {
-                            result.push(c);
                         }
                     }
                     _ => result.push(c),
