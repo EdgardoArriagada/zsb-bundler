@@ -3,7 +3,8 @@ enum Context {
     Normal,
     EmptyLine,
     InComment,
-    InString,
+    InDoubleQuoteString,
+    InSingleQuoteString,
 }
 
 pub fn bundle_lines(lines: String) -> String {
@@ -15,7 +16,7 @@ pub fn bundle_lines(lines: String) -> String {
     for line in lines.lines() {
         match context {
             Context::InComment | Context::EmptyLine => context = Context::Normal,
-            Context::InString => result.push('\n'),
+            Context::InDoubleQuoteString | Context::InSingleQuoteString => result.push('\n'),
             _ => match prev_char {
                 ' ' | ';' => {}
                 '{' => result.push(' '),
@@ -55,9 +56,14 @@ pub fn bundle_lines(lines: String) -> String {
                             result.push(c);
                         }
                     }
-                    '\'' | '"' => {
+                    '"' => {
                         reached_char = true;
-                        context = Context::InString;
+                        context = Context::InDoubleQuoteString;
+                        result.push(c);
+                    }
+                    '\'' => {
+                        reached_char = true;
+                        context = Context::InSingleQuoteString;
                         result.push(c);
                     }
                     _ => {
@@ -65,8 +71,17 @@ pub fn bundle_lines(lines: String) -> String {
                         result.push(c);
                     }
                 },
-                Context::InString => match c {
-                    '\'' | '"' => {
+                Context::InDoubleQuoteString => match c {
+                    '"' => {
+                        if prev_char != '\\' {
+                            context = Context::Normal;
+                        }
+                        result.push(c);
+                    }
+                    _ => result.push(c),
+                },
+                Context::InSingleQuoteString => match c {
+                    '\'' => {
                         if prev_char != '\\' {
                             context = Context::Normal;
                         }
@@ -157,6 +172,15 @@ mod tests {
         let bundled = get_bundled("multi_line_string");
 
         let expected = get_expected("multi_line_string");
+
+        assert_eq!(bundled, expected);
+    }
+
+    #[test]
+    fn test_interpolated_string() {
+        let bundled = get_bundled("interpolated_string");
+
+        let expected = get_expected("interpolated_string");
 
         assert_eq!(bundled, expected);
     }
