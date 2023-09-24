@@ -56,7 +56,10 @@ pub fn bundle_lines(lines: String) -> String {
                             result.pop();
                         }
 
-                        result.push(';');
+                        if array_count == 0 {
+                            result.push(';');
+                        }
+
                         result.push(' ');
                         break;
                     }
@@ -235,6 +238,15 @@ mod tests {
         let bundled = get_bundled("array_len");
 
         let expected = get_expected("array_len");
+
+        assert_eq!(bundled, expected);
+    }
+
+    #[test]
+    fn test_complex_array() {
+        let bundled = get_bundled("complex_array");
+
+        let expected = get_expected("complex_array");
 
         assert_eq!(bundled, expected);
     }
