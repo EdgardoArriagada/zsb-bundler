@@ -2,9 +2,9 @@
 enum Context {
     Normal,
     EmptyLine,
-    InComment,
-    InDoubleQuoteString,
-    InSingleQuoteString,
+    Comment,
+    DoubleQuoteString,
+    SingleQuoteString,
 }
 
 pub fn bundle_lines(lines: String) -> String {
@@ -15,8 +15,8 @@ pub fn bundle_lines(lines: String) -> String {
 
     for line in lines.lines() {
         match context {
-            Context::InComment | Context::EmptyLine => context = Context::Normal,
-            Context::InDoubleQuoteString | Context::InSingleQuoteString => result.push('\n'),
+            Context::Comment | Context::EmptyLine => context = Context::Normal,
+            Context::DoubleQuoteString | Context::SingleQuoteString => result.push('\n'),
             _ => match prev_char {
                 ' ' | ';' => {}
                 '{' => result.push(' '),
@@ -38,7 +38,7 @@ pub fn bundle_lines(lines: String) -> String {
             match context {
                 Context::Normal => match c {
                     '#' => {
-                        context = Context::InComment;
+                        context = Context::Comment;
                         if !reached_char {
                             break;
                         }
@@ -58,12 +58,12 @@ pub fn bundle_lines(lines: String) -> String {
                     }
                     '"' => {
                         reached_char = true;
-                        context = Context::InDoubleQuoteString;
+                        context = Context::DoubleQuoteString;
                         result.push(c);
                     }
                     '\'' => {
                         reached_char = true;
-                        context = Context::InSingleQuoteString;
+                        context = Context::SingleQuoteString;
                         result.push(c);
                     }
                     _ => {
@@ -71,7 +71,7 @@ pub fn bundle_lines(lines: String) -> String {
                         result.push(c);
                     }
                 },
-                Context::InDoubleQuoteString => match c {
+                Context::DoubleQuoteString => match c {
                     '"' => {
                         if prev_char != '\\' {
                             context = Context::Normal;
@@ -80,7 +80,7 @@ pub fn bundle_lines(lines: String) -> String {
                     }
                     _ => result.push(c),
                 },
-                Context::InSingleQuoteString => match c {
+                Context::SingleQuoteString => match c {
                     '\'' => {
                         if prev_char != '\\' {
                             context = Context::Normal;
