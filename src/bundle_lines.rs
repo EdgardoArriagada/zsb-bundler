@@ -5,18 +5,27 @@ enum Context {
     Comment,
     DoubleQuoteString,
     SingleQuoteString,
+    ParamExpansion,
+    Array,
 }
 
 pub fn bundle_lines(lines: String) -> String {
     let mut context = Context::Normal;
 
     let mut result = String::new();
+    let mut param_expansion_count = 0;
+    let mut array_count = 0;
     let mut prev_char = ' ';
 
     for line in lines.lines() {
+        if param_expansion_count > 0 {
+            panic!("Unmatched '{{' in line: {}", line);
+        }
+
         match context {
             Context::Comment | Context::EmptyLine => context = Context::Normal,
             Context::DoubleQuoteString | Context::SingleQuoteString => result.push('\n'),
+            Context::Array => result.push(' '),
             _ => match prev_char {
                 ' ' | ';' => {}
                 '{' => result.push(' '),
@@ -66,6 +75,22 @@ pub fn bundle_lines(lines: String) -> String {
                         context = Context::SingleQuoteString;
                         result.push(c);
                     }
+                    '{' => {
+                        reached_char = true;
+                        if prev_char == '$' {
+                            param_expansion_count += 1;
+                            context = Context::ParamExpansion;
+                        }
+                        result.push(c);
+                    }
+                    '(' => {
+                        reached_char = true;
+                        if prev_char == '=' {
+                            array_count += 1;
+                            context = Context::Array;
+                        }
+                        result.push(c);
+                    }
                     _ => {
                         reached_char = true;
                         result.push(c);
@@ -86,6 +111,41 @@ pub fn bundle_lines(lines: String) -> String {
                             context = Context::Normal;
                         }
                         result.push(c);
+                    }
+                    _ => result.push(c),
+                },
+                Context::ParamExpansion => match c {
+                    '{' => {
+                        param_expansion_count += 1;
+                        result.push(c);
+                    }
+                    '}' => {
+                        param_expansion_count -= 1;
+                        result.push(c);
+                        if param_expansion_count == 0 {
+                            context = Context::Normal;
+                        }
+                    }
+                    _ => result.push(c),
+                },
+                Context::Array => match c {
+                    '(' => {
+                        reached_char = true;
+                        array_count += 1;
+                        result.push(c);
+                    }
+                    ')' => {
+                        reached_char = true;
+                        array_count -= 1;
+                        result.push(c);
+                        if array_count == 0 {
+                            context = Context::Normal;
+                        }
+                    }
+                    ' ' => {
+                        if reached_char && prev_char != ' ' {
+                            result.push(c);
+                        }
                     }
                     _ => result.push(c),
                 },
@@ -181,6 +241,15 @@ mod tests {
         let bundled = get_bundled("interpolated_string");
 
         let expected = get_expected("interpolated_string");
+
+        assert_eq!(bundled, expected);
+    }
+
+    #[test]
+    fn test_array_len() {
+        let bundled = get_bundled("array_len");
+
+        let expected = get_expected("array_len");
 
         assert_eq!(bundled, expected);
     }
