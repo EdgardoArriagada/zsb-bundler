@@ -15,6 +15,7 @@ pub fn bundle_lines(lines: String) -> String {
     let mut param_expansion_count = 0;
     let mut array_count = 0;
     let mut prev_char = ' ';
+    let mut pre_prev_char = ' ';
 
     for line in lines.lines() {
         if param_expansion_count > 0 {
@@ -25,7 +26,12 @@ pub fn bundle_lines(lines: String) -> String {
             Context::Comment | Context::EmptyLine => context = Context::Normal,
             Context::DoubleQuoteString | Context::SingleQuoteString => result.push('\n'),
             _ => match prev_char {
-                ' ' | ';' => {}
+                ' ' => {}
+                ';' => {
+                    if pre_prev_char == ';' {
+                        result.push(' ');
+                    }
+                }
                 '{' => result.push(' '),
                 _ => {
                     if array_count == 0 {
@@ -47,6 +53,11 @@ pub fn bundle_lines(lines: String) -> String {
             match context {
                 Context::Normal => match c {
                     '#' => {
+                        if prev_char == '$' || prev_char == '\\' {
+                            result.push(c);
+                            continue;
+                        }
+
                         context = Context::Comment;
                         if !reached_char {
                             break;
@@ -140,6 +151,7 @@ pub fn bundle_lines(lines: String) -> String {
                 _ => {}
             }
 
+            pre_prev_char = prev_char;
             prev_char = c;
         }
     }
@@ -247,6 +259,15 @@ mod tests {
         let bundled = get_bundled("complex_array");
 
         let expected = get_expected("complex_array");
+
+        assert_eq!(bundled, expected);
+    }
+
+    #[test]
+    fn test_case_keyword() {
+        let bundled = get_bundled("case_keyword");
+
+        let expected = get_expected("case_keyword");
 
         assert_eq!(bundled, expected);
     }
