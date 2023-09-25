@@ -1,7 +1,7 @@
 mod bundle_lines;
 use bundle_lines::bundle_lines;
+use std::sync::OnceLock;
 
-// return all the files in a given dir recursively
 fn output_files(dir: &str) -> Vec<String> {
     let paths = std::fs::read_dir(dir).unwrap();
     let mut result = vec![];
@@ -22,18 +22,33 @@ fn output_files(dir: &str) -> Vec<String> {
     result
 }
 
+fn bundled_files(files: &Vec<String>) -> String {
+    let mut bundled_files = files.iter().fold(String::new(), |acc, util| {
+        let lines = std::fs::read_to_string(util).unwrap();
+        acc + &bundle_lines(lines) + "; "
+    });
+
+    bundled_files.truncate(bundled_files.len() - 2);
+    bundled_files
+}
+
+static HOME_CACHE: OnceLock<String> = OnceLock::new();
+
+fn get_home() -> &'static str {
+    HOME_CACHE.get_or_init(|| std::env::var("HOME").unwrap())
+}
+
+fn get_dir_files(dir: &str) -> Vec<String> {
+    let path = format!("{}/.zsh-spell-book/src/{}", get_home(), dir);
+
+    if !std::path::Path::new(&path).exists() {
+        panic!("{} does not exist", path);
+    }
+
+    output_files(&path)
+}
+
 fn main() {
-    let home = std::env::var("HOME").unwrap();
-
-    let dir = format!("{}/.zsh-spell-book/src/utils", home);
-    let utils = output_files(&dir);
-    println!("{:?}", utils);
-
-    // let lines = std::fs::read_to_string(dir).unwrap();
-    //
-    // let result = bundle_lines(lines);
-    //
-    // println!("-------------------");
-    //
-    // println!("{}", result);
+    let bundled_utils = bundled_files(&get_dir_files("utils"));
+    println!("le bundled_utils {}", bundled_utils);
 }
