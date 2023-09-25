@@ -167,21 +167,12 @@ mod tests {
 
     static DIR_CACHE: OnceLock<String> = OnceLock::new();
 
-    fn get_dir_inner() -> String {
-        std::env::current_dir().unwrap().display().to_string()
-    }
-
     pub fn get_dir() -> &'static str {
-        DIR_CACHE.get_or_init(get_dir_inner)
+        DIR_CACHE.get_or_init(|| std::env::current_dir().unwrap().display().to_string())
     }
 
     fn get_path(file_name: &str, extension: &str) -> String {
-        format!(
-            "{}/src/test_utils/{}{}",
-            get_dir(),
-            file_name,
-            extension
-        )
+        format!("{}/src/test_utils/{}{}", get_dir(), file_name, extension)
     }
 
     fn get_lines(file_name: &str) -> String {
