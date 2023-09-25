@@ -22,7 +22,37 @@ fn output_files(dir: &str) -> Vec<String> {
     result
 }
 
-fn bundled_files(files: &Vec<String>) -> String {
+static HOME_CACHE: OnceLock<String> = OnceLock::new();
+
+fn get_home() -> &'static str {
+    HOME_CACHE.get_or_init(|| std::env::var("HOME").unwrap())
+}
+
+fn get_dir_files(dir: &str) -> Vec<String> {
+    let path = format!("{}/.zsh-spell-book/{}", get_home(), dir);
+
+    if !std::path::Path::new(&path).exists() {
+        println!("WARNING: {} does not exist", path);
+        return vec![];
+    }
+
+    output_files(&path)
+}
+
+fn get_file(file: &str) -> String {
+    let path = format!("{}/.zsh-spell-book/{}", get_home(), file);
+
+    if !std::path::Path::new(&path).exists() {
+        println!("WARNING: {} does not exist", path);
+        return String::new();
+    }
+
+    path.to_string()
+}
+
+fn bundled_files(dir_name: &str) -> String {
+    let files = get_dir_files(dir_name);
+
     let mut bundled_files = files.iter().fold(String::new(), |acc, util| {
         let lines = std::fs::read_to_string(util).unwrap();
         acc + &bundle_lines(lines) + "; "
@@ -32,23 +62,45 @@ fn bundled_files(files: &Vec<String>) -> String {
     bundled_files
 }
 
-static HOME_CACHE: OnceLock<String> = OnceLock::new();
+fn bundle_file(file_name: &str) -> String {
+    let file = get_file(file_name);
 
-fn get_home() -> &'static str {
-    HOME_CACHE.get_or_init(|| std::env::var("HOME").unwrap())
+    let lines = std::fs::read_to_string(file).unwrap();
+    bundle_lines(lines)
 }
 
-fn get_dir_files(dir: &str) -> Vec<String> {
-    let path = format!("{}/.zsh-spell-book/src/{}", get_home(), dir);
-
-    if !std::path::Path::new(&path).exists() {
-        panic!("{} does not exist", path);
-    }
-
-    output_files(&path)
+fn write_result(result: String) {
+    let path = format!("{}/.zsh-spell-book/result1.zsh", get_home());
+    std::fs::write(path, result).unwrap();
 }
 
 fn main() {
-    let bundled_utils = bundled_files(&get_dir_files("utils"));
-    println!("le bundled_utils {}", bundled_utils);
+    let bundled_env = bundle_file(".env");
+    let bundled_zsh_config = bundle_file("src/zsh.config.zsh");
+    let bundled_vars = bundle_file("src/globalVariables.zsh");
+
+    let bundled_utils = bundled_files("src/utils");
+    let bundled_configs = bundled_files("src/configurations");
+    let bundled_spells = bundled_files("src/spells");
+
+    let bundled_temp_spells = bundled_files("src/temp/spells");
+    let bundled_calls = bundled_files("src/automatic-calls");
+
+    let result = bundled_env
+        + "; "
+        + &bundled_zsh_config
+        + "; "
+        + &bundled_vars
+        + "; "
+        + &bundled_utils
+        + "; "
+        + &bundled_configs
+        + "; "
+        + &bundled_spells
+        + "; "
+        + &bundled_temp_spells
+        + "; "
+        + &bundled_calls;
+
+    write_result(result);
 }
