@@ -2,7 +2,7 @@ mod bundle_lines;
 use bundle_lines::bundle_lines;
 use std::sync::OnceLock;
 
-fn output_files(dir: &str) -> Vec<String> {
+fn output_zsh_files(dir: &str) -> Vec<String> {
     let paths = std::fs::read_dir(dir).unwrap();
     let mut result = vec![];
 
@@ -10,7 +10,7 @@ fn output_files(dir: &str) -> Vec<String> {
         let path = path.unwrap().path();
 
         if path.is_dir() {
-            let files = output_files(path.to_str().unwrap());
+            let files = output_zsh_files(path.to_str().unwrap());
             for file in files {
                 if file.ends_with(".zsh") {
                     result.push(file);
@@ -33,7 +33,7 @@ fn get_home() -> &'static str {
     HOME_CACHE.get_or_init(|| std::env::var("HOME").unwrap())
 }
 
-fn get_dir_files(dir: &str) -> Vec<String> {
+fn get_dir_zsh_files(dir: &str) -> Vec<String> {
     let path = format!("{}/.zsh-spell-book/{}", get_home(), dir);
 
     if !std::path::Path::new(&path).exists() {
@@ -41,7 +41,7 @@ fn get_dir_files(dir: &str) -> Vec<String> {
         return vec![];
     }
 
-    output_files(&path)
+    output_zsh_files(&path)
 }
 
 fn get_file(file: &str) -> String {
@@ -55,8 +55,8 @@ fn get_file(file: &str) -> String {
     path.to_string()
 }
 
-fn bundled_files(dir_name: &str) -> String {
-    let files = get_dir_files(dir_name);
+fn bundled_zsh_files(dir_name: &str) -> String {
+    let files = get_dir_zsh_files(dir_name);
 
     let mut bundled_files = files.iter().fold(String::new(), |acc, util| {
         let lines = std::fs::read_to_string(util).unwrap();
@@ -84,12 +84,12 @@ fn main() {
     let bundled_zsh_config = bundle_file("src/zsh.config.zsh");
     let bundled_vars = bundle_file("src/globalVariables.zsh");
 
-    let bundled_utils = bundled_files("src/utils");
-    let bundled_configs = bundled_files("src/configurations");
-    let bundled_spells = bundled_files("src/spells");
+    let bundled_utils = bundled_zsh_files("src/utils");
+    let bundled_configs = bundled_zsh_files("src/configurations");
+    let bundled_spells = bundled_zsh_files("src/spells");
 
-    let bundled_temp_spells = bundled_files("src/temp/spells");
-    let bundled_calls = bundled_files("src/automatic-calls");
+    let bundled_temp_spells = bundled_zsh_files("src/temp/spells");
+    let bundled_calls = bundled_zsh_files("src/automatic-calls");
 
     let result = bundled_env
         + "; "
