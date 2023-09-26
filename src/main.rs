@@ -12,10 +12,15 @@ fn output_files(dir: &str) -> Vec<String> {
         if path.is_dir() {
             let files = output_files(path.to_str().unwrap());
             for file in files {
-                result.push(file);
+                if file.ends_with(".zsh") {
+                    result.push(file);
+                }
             }
         } else {
-            result.push(path.to_str().unwrap().to_string());
+            let path = path.to_str().unwrap();
+            if path.ends_with(".zsh") {
+                result.push(path.to_string());
+            }
         }
     }
 
@@ -103,4 +108,6 @@ fn main() {
         + &bundled_calls;
 
     write_result(result);
+
+    println!("Done!");
 }
