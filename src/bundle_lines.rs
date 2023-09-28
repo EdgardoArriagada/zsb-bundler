@@ -28,7 +28,7 @@ pub fn bundle_lines(lines: String) -> String {
             _ => match prev_char {
                 ' ' => {}
                 '\\' => {
-                    if pre_prev_char != '\\' {
+                    if pre_prev_char == ' ' {
                         result.pop();
                     }
                 }
