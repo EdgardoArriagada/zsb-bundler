@@ -26,7 +26,12 @@ pub fn bundle_lines(lines: String) -> String {
             Context::Comment | Context::EmptyLine => context = Context::Normal,
             Context::DoubleQuoteString | Context::SingleQuoteString => result.push('\n'),
             _ => match prev_char {
-                ' ' => {}
+                ' '  => {}
+                '\\' => {
+                    if pre_prev_char != '\\' {
+                        result.pop();
+                    }
+                }
                 ';' => {
                     if pre_prev_char == ';' {
                         result.push(' ');
@@ -259,6 +264,15 @@ mod tests {
         let bundled = get_bundled("case_keyword");
 
         let expected = get_expected("case_keyword");
+
+        assert_eq!(bundled, expected);
+    }
+
+    #[test]
+    fn test_multi_line_instruction() {
+        let bundled = get_bundled("multi_line_instruction");
+
+        let expected = get_expected("multi_line_instruction");
 
         assert_eq!(bundled, expected);
     }
