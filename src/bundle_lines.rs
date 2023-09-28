@@ -26,7 +26,7 @@ pub fn bundle_lines(lines: String) -> String {
             Context::Comment | Context::EmptyLine => context = Context::Normal,
             Context::DoubleQuoteString | Context::SingleQuoteString => result.push('\n'),
             _ => match prev_char {
-                ' '  => {}
+                ' ' => {}
                 '\\' => {
                     if pre_prev_char != '\\' {
                         result.pop();
@@ -37,7 +37,7 @@ pub fn bundle_lines(lines: String) -> String {
                         result.push(' ');
                     }
                 }
-                '{' => result.push(' '),
+                '{' | '(' => result.push(' '),
                 _ => {
                     if array_count == 0 {
                         result.push(';');
