@@ -23,7 +23,17 @@ pub fn bundle_lines(lines: String) -> String {
         }
 
         match context {
-            Context::Comment | Context::EmptyLine => context = Context::Normal,
+            Context::Comment => context = Context::Normal,
+            Context::EmptyLine => {
+                if prev_char == ' ' && pre_prev_char != ' ' && pre_prev_char != ';' {
+                    result.pop();
+                    result.push(';');
+                    result.push(' ');
+                }
+                prev_char = ' ';
+                pre_prev_char = ' ';
+                context = Context::Normal
+            }
             Context::DoubleQuoteString | Context::SingleQuoteString => result.push('\n'),
             _ => match prev_char {
                 ' ' => {}
@@ -273,6 +283,15 @@ mod tests {
         let bundled = get_bundled("multi_line_instruction");
 
         let expected = get_expected("multi_line_instruction");
+
+        assert_eq!(bundled, expected);
+    }
+
+    #[test]
+    fn test_border_case() {
+        let bundled = get_bundled("border_case");
+
+        let expected = get_expected("border_case");
 
         assert_eq!(bundled, expected);
     }
