@@ -2,7 +2,6 @@
 enum Context {
     Normal,
     EmptyLine,
-    Comment,
     DoubleQuoteString,
     SingleQuoteString,
     ParamExpansion,
@@ -10,8 +9,8 @@ enum Context {
 
 pub fn bundle_lines(lines: String) -> String {
     let mut context = Context::Normal;
-
     let mut result = String::new();
+
     let mut param_expansion_count = 0;
     let mut array_count = 0;
     let mut prev_char = ' ';
@@ -23,7 +22,6 @@ pub fn bundle_lines(lines: String) -> String {
         }
 
         match context {
-            Context::Comment => context = Context::Normal,
             Context::EmptyLine => {
                 if prev_char == ' ' && pre_prev_char != ' ' && pre_prev_char != ';' {
                     result.pop();
@@ -73,7 +71,6 @@ pub fn bundle_lines(lines: String) -> String {
                             continue;
                         }
 
-                        context = Context::Comment;
                         if !reached_char {
                             break;
                         }
@@ -84,9 +81,13 @@ pub fn bundle_lines(lines: String) -> String {
 
                         if array_count == 0 {
                             result.push(';');
+                            pre_prev_char = ';';
+                        } else {
+                            pre_prev_char = c;
                         }
 
                         result.push(' ');
+                        prev_char = ' ';
                         break;
                     }
                     ' ' => {
@@ -292,6 +293,15 @@ mod tests {
         let bundled = get_bundled("border_case");
 
         let expected = get_expected("border_case");
+
+        assert_eq!(bundled, expected);
+    }
+
+    #[test]
+    fn test_border_case_2() {
+        let bundled = get_bundled("border_case_2");
+
+        let expected = get_expected("border_case_2");
 
         assert_eq!(bundled, expected);
     }

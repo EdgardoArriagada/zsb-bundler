@@ -60,7 +60,7 @@ fn bundled_zsh_files(dir_name: &str) -> String {
 
     let mut bundled_files = files.iter().fold(String::new(), |acc, util| {
         let lines = std::fs::read_to_string(util).unwrap();
-        acc + &bundle_lines(lines) + "; "
+        acc + &bundle_lines(lines)
     });
 
     bundled_files.truncate(bundled_files.len() - 2);
