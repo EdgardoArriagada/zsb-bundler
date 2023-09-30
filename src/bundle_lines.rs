@@ -1,4 +1,4 @@
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 enum Context {
     Normal,
     EmptyLine,
@@ -55,7 +55,7 @@ pub fn bundle_lines(lines: String) -> String {
             },
         }
 
-        if line.is_empty() {
+        if context == Context::Normal && line.is_empty() {
             context = Context::EmptyLine;
             continue;
         }
@@ -170,6 +170,10 @@ pub fn bundle_lines(lines: String) -> String {
             pre_prev_char = prev_char;
             prev_char = c;
         }
+    }
+
+    if prev_char == ' ' {
+        result.pop();
     }
 
     result
