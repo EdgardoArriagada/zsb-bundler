@@ -49,8 +49,11 @@ pub fn bundle_lines(lines: String) -> String {
 
     let mut param_expansion_count = 0;
     let mut array_count = 0;
+    let mut line_count = -1;
 
     for line in lines.lines() {
+        line_count += 1;
+
         if param_expansion_count > 0 {
             panic!("Unmatched '{{' in line: {}", line);
         }
@@ -62,7 +65,15 @@ pub fn bundle_lines(lines: String) -> String {
                 ch.ppush('\n');
             }
             _ => match ch.prev() {
-                ' ' => {}
+                ' ' => {
+                    if array_count == 0 && line_count != 0 && ch.pre_prev() != ';' {
+                        result.pop();
+                        ch.ppop();
+
+                        result.push(';');
+                        ch.ppush(';');
+                    }
+                }
                 '\\' => {
                     if ch.pre_prev() == ' ' {
                         result.pop();
@@ -225,8 +236,10 @@ pub fn bundle_lines(lines: String) -> String {
         }
     }
 
-    if ch.prev() == ' ' {
-        result.pop();
+    // add a "; " only if it does not has it
+    if !result.ends_with("; ") {
+        result.push(';');
+        result.push(' ');
     }
 
     result
