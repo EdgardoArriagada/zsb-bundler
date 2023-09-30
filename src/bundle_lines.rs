@@ -7,14 +7,48 @@ enum Context {
     ParamExpansion,
 }
 
+trait VecExt<Char> {
+    fn prev(&self) -> char;
+    fn pre_prev(&self) -> char;
+    fn ppush(&mut self, c: char);
+    fn ppush2(&mut self, c1: char, c2: char);
+    fn ppop(&mut self) -> Option<char>;
+}
+
+impl VecExt<char> for [char; 3] {
+    fn prev(&self) -> char {
+        self[0]
+    }
+    fn pre_prev(&self) -> char {
+        self[1]
+    }
+    fn ppush(&mut self, c: char) {
+        self[2] = self[1];
+        self[1] = self[0];
+        self[0] = c;
+    }
+    fn ppush2(&mut self, c1: char, c2: char) {
+        self[2] = self[0];
+        self[1] = c1;
+        self[0] = c2;
+    }
+    fn ppop(&mut self) -> Option<char> {
+        let result = self[0];
+        self[0] = self[1];
+        self[1] = self[2];
+        self[2] = ' ';
+        Some(result)
+    }
+}
+
 pub fn bundle_lines(lines: String) -> String {
     let mut context = Context::Normal;
     let mut result = String::new();
 
+    let mut ch = [' '; 3];
+
     let mut param_expansion_count = 0;
     let mut array_count = 0;
-    let mut prev_char = ' ';
-    let mut pre_prev_char = ' ';
 
     for line in lines.lines() {
         if param_expansion_count > 0 {
@@ -23,34 +57,38 @@ pub fn bundle_lines(lines: String) -> String {
 
         match context {
             Context::EmptyLine => {
-                if prev_char == ' ' && pre_prev_char != ' ' && pre_prev_char != ';' {
+                if ch.prev() == ' ' && ch.pre_prev() != ' ' && ch.pre_prev() != ';' {
                     result.pop();
                     result.push(';');
                     result.push(' ');
+                    ch.ppop();
+                    ch.ppush2(';', ' ');
                 }
-                prev_char = ' ';
-                pre_prev_char = ' ';
                 context = Context::Normal
             }
             Context::DoubleQuoteString | Context::SingleQuoteString => result.push('\n'),
-            _ => match prev_char {
+            _ => match ch.prev() {
                 ' ' => {}
                 '\\' => {
-                    if pre_prev_char == ' ' {
+                    if ch.pre_prev() == ' ' {
                         result.pop();
+                        ch.ppop();
                     }
                 }
                 ';' => {
-                    if pre_prev_char == ';' {
+                    if ch.pre_prev() == ';' {
                         result.push(' ');
+                        ch.ppush(' ');
                     }
                 }
                 '{' | '(' => result.push(' '),
                 _ => {
                     if array_count == 0 {
                         result.push(';');
+                        ch.ppush(';');
                     }
                     result.push(' ');
+                    ch.ppush(' ');
                 }
             },
         }
@@ -66,8 +104,9 @@ pub fn bundle_lines(lines: String) -> String {
             match context {
                 Context::Normal => match c {
                     '#' => {
-                        if prev_char == '$' || prev_char == '\\' {
+                        if ch.prev() == '$' || ch.prev() == '\\' {
                             result.push(c);
+                            ch.ppush(c);
                             continue;
                         }
 
@@ -76,50 +115,54 @@ pub fn bundle_lines(lines: String) -> String {
                             break;
                         }
 
-                        if prev_char == ' ' {
+                        if ch.prev() == ' ' {
                             result.pop();
+                            ch.ppop();
                         }
 
                         if array_count == 0 {
                             result.push(';');
-                            pre_prev_char = ';';
-                        } else {
-                            pre_prev_char = c;
+                            ch.ppush(';');
                         }
 
                         result.push(' ');
-                        prev_char = ' ';
+                        ch.ppush(' ');
                         break;
                     }
                     ' ' => {
-                        if reached_char && prev_char != ' ' {
+                        if reached_char && ch.prev() != ' ' {
                             result.push(c);
+                            ch.ppush(c);
                         }
                     }
                     '"' => {
                         reached_char = true;
                         context = Context::DoubleQuoteString;
                         result.push(c);
+                        ch.ppush(c);
                     }
                     '\'' => {
                         reached_char = true;
                         context = Context::SingleQuoteString;
                         result.push(c);
+                        ch.ppush(c);
                     }
                     '{' => {
                         reached_char = true;
-                        if prev_char == '$' {
+                        if ch.prev() == '$' {
                             param_expansion_count += 1;
                             context = Context::ParamExpansion;
                         }
                         result.push(c);
+                        ch.ppush(c);
                     }
                     '(' => {
                         reached_char = true;
-                        if prev_char == '=' {
+                        if ch.prev() == '=' {
                             array_count += 1;
                         }
                         result.push(c);
+                        ch.ppush(c);
                     }
                     ')' => {
                         reached_char = true;
@@ -127,53 +170,65 @@ pub fn bundle_lines(lines: String) -> String {
                             array_count -= 1;
                         }
                         result.push(c);
+                        ch.ppush(c);
                     }
                     _ => {
                         reached_char = true;
                         result.push(c);
+                        ch.ppush(c);
                     }
                 },
                 Context::DoubleQuoteString => match c {
                     '"' => {
-                        if prev_char != '\\' {
+                        if ch.prev() != '\\' {
                             context = Context::Normal;
                         }
                         result.push(c);
+                        ch.ppush(c);
                     }
-                    _ => result.push(c),
+                    _ => {
+                        result.push(c);
+                        ch.ppush(c);
+                    }
                 },
                 Context::SingleQuoteString => match c {
                     '\'' => {
-                        if prev_char != '\\' {
+                        if ch.prev() != '\\' {
                             context = Context::Normal;
                         }
                         result.push(c);
+                        ch.ppush(c);
                     }
-                    _ => result.push(c),
+                    _ => {
+                        result.push(c);
+                        ch.ppush(c);
+                    }
                 },
                 Context::ParamExpansion => match c {
                     '{' => {
                         param_expansion_count += 1;
                         result.push(c);
+                        ch.ppush(c);
                     }
                     '}' => {
                         param_expansion_count -= 1;
                         result.push(c);
+                        ch.ppush(c);
                         if param_expansion_count == 0 {
                             context = Context::Normal;
                         }
                     }
-                    _ => result.push(c),
+                    _ => {
+                        result.push(c);
+                        ch.ppush(c);
+                    }
                 },
                 _ => {}
             }
-
-            pre_prev_char = prev_char;
-            prev_char = c;
         }
     }
 
-    if prev_char == ' ' {
+    if ch.prev() == ' ' {
         result.pop();
     }
 
