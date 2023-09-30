@@ -56,19 +56,14 @@ pub fn bundle_lines(lines: String) -> String {
         }
 
         match context {
-            Context::EmptyLine => {
-                if ch.prev() == ' ' && ch.pre_prev() != ' ' && ch.pre_prev() != ';' {
-                    result.pop();
-                    result.push(';');
-                    result.push(' ');
-                    ch.ppop();
-                    ch.ppush2(';', ' ');
-                }
-                context = Context::Normal
+            Context::EmptyLine => context = Context::Normal,
+            Context::DoubleQuoteString | Context::SingleQuoteString => {
+                result.push('\n');
+                ch.ppush('\n');
             }
-            Context::DoubleQuoteString | Context::SingleQuoteString => result.push('\n'),
             _ => match ch.prev() {
-                ' ' => {}
+                ' ' => {
+                }
                 '\\' => {
                     if ch.pre_prev() == ' ' {
                         result.pop();
@@ -81,7 +76,10 @@ pub fn bundle_lines(lines: String) -> String {
                         ch.ppush(' ');
                     }
                 }
-                '{' | '(' => result.push(' '),
+                '{' | '(' => {
+                    result.push(' ');
+                    ch.ppush(' ');
+                }
                 _ => {
                     if array_count == 0 {
                         result.push(';');
