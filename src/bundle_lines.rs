@@ -72,6 +72,7 @@ pub fn bundle_lines(lines: String) -> String {
                         }
 
                         if !reached_char {
+                            context = Context::EmptyLine;
                             break;
                         }
 
