@@ -62,8 +62,7 @@ pub fn bundle_lines(lines: String) -> String {
                 ch.ppush('\n');
             }
             _ => match ch.prev() {
-                ' ' => {
-                }
+                ' ' => {}
                 '\\' => {
                     if ch.pre_prev() == ' ' {
                         result.pop();
